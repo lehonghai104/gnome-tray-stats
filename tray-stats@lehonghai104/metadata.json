@@ -1,0 +1,8 @@
+{
+  "uuid": "tray-stats@lehonghai104",
+  "name": "Tray Stats",
+  "description": "Shows Bluetooth / wireless device battery levels and CPU + RAM usage in the top bar.",
+  "shell-version": ["45", "46", "47", "48"],
+  "settings-schema": "org.gnome.shell.extensions.tray-stats",
+  "version": 1
+}

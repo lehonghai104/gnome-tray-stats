@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <enum id="org.gnome.shell.extensions.tray-stats.PanelBox">
+    <value nick="left" value="0"/>
+    <value nick="center" value="1"/>
+    <value nick="right" value="2"/>
+  </enum>
+
+  <schema id="org.gnome.shell.extensions.tray-stats" path="/org/gnome/shell/extensions/tray-stats/">
+    <key name="show-cpu" type="b">
+      <default>true</default>
+      <summary>Show CPU usage in the top bar</summary>
+    </key>
+    <key name="show-memory" type="b">
+      <default>true</default>
+      <summary>Show memory usage in the top bar</summary>
+    </key>
+    <key name="show-devices" type="b">
+      <default>true</default>
+      <summary>Show device batteries in the top bar</summary>
+    </key>
+    <key name="refresh-interval" type="i">
+      <range min="1" max="60"/>
+      <default>2</default>
+      <summary>CPU and memory refresh interval, in seconds</summary>
+    </key>
+    <key name="low-battery-threshold" type="i">
+      <range min="0" max="100"/>
+      <default>20</default>
+      <summary>Battery percentage at or below which a device is highlighted</summary>
+    </key>
+    <key name="panel-box" enum="org.gnome.shell.extensions.tray-stats.PanelBox">
+      <default>'right'</default>
+      <summary>Top bar section to place the indicator in</summary>
+    </key>
+    <key name="panel-index" type="i">
+      <range min="0" max="50"/>
+      <default>0</default>
+      <summary>Position within the top bar section (0 = first)</summary>
+    </key>
+  </schema>
+</schemalist>
