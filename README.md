@@ -9,8 +9,10 @@ A GNOME Shell extension that adds a top-bar indicator showing:
   already collects BlueZ and HID++ batteries.
 
 ```
-[cpu] 8%   [ram] 37%   [mouse] Full   [keyboard] 50%
+[cpu] 8%   [ram] 37%   [mouse] Full   [keyboard] 50% [bolt]
 ```
+
+A device that is charging gets a green bolt after its charge, and its bar in the menu turns green.
 
 Click the indicator to open a menu with usage bars, load average, used/total memory and
 swap, each device's charge and charging state, and shortcuts to System Monitor, Bluetooth
@@ -35,7 +37,8 @@ Open them from the menu (**Preferences**) or with `gnome-extensions prefs tray-s
 
 - Choose which of CPU, memory and devices appear in the top bar. The menu always lists all of them.
 - Refresh interval for CPU/RAM (default 2 s). Battery updates are event-driven and don't poll.
-- Low-battery threshold (default 20%). Devices at or below it are shown in red, as is CPU/RAM at 90% or more.
+- Low-battery threshold (default 20%). Devices at or below it are shown in red unless they are
+  charging, as is CPU/RAM at 90% or more.
 - Top bar section (left/center/right) and position within it.
 
 ## Notes
@@ -66,6 +69,6 @@ tray-stats@lehonghai104/
   sources.js     CPU/RAM sampler and UPower device monitor (GLib/Gio only, runnable in plain gjs)
   prefs.js       Adwaita preferences window
   stylesheet.css
-  icons/         CPU and RAM symbolic icons
+  icons/         CPU, RAM and charging symbolic icons
   schemas/       GSettings schema
 ```

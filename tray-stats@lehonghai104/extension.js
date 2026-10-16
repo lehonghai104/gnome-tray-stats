@@ -57,11 +57,20 @@ function formatBytes(bytes) {
     return GLib.format_size_full(bytes, GLib.FormatSizeFlags.IEC_UNITS);
 }
 
+function setStyleClass(actor, className, enabled) {
+    if (enabled)
+        actor.add_style_class_name(className);
+    else
+        actor.remove_style_class_name(className);
+}
+
 /**
- * Returns {text, fraction, low, detail} describing a device's charge.
+ * Returns {text, fraction, low, charging, detail} describing a device's charge.
  * fraction is null for coarse-level devices, whose percentage is meaningless.
+ * A charging device is never flagged low, since it's already being dealt with.
  */
 function describeBattery(device, lowThreshold) {
+    const charging = device.state === DeviceState.CHARGING;
     const label = LEVELS[device.level];
     if (label) {
         // UPower fakes a 100% percentage and a "fully charged" state from a
@@ -70,14 +79,17 @@ function describeBattery(device, lowThreshold) {
         return {
             text: _(label),
             fraction: null,
-            low: device.level === DeviceLevel.LOW || device.level === DeviceLevel.CRITICAL,
-            detail: device.state === DeviceState.CHARGING ? _(STATE_LABELS[device.state]) : '',
+            low: !charging &&
+                (device.level === DeviceLevel.LOW || device.level === DeviceLevel.CRITICAL),
+            charging,
+            detail: charging ? _(STATE_LABELS[device.state]) : '',
         };
     }
     return {
         text: `${Math.round(device.percentage)}%`,
         fraction: device.percentage / 100,
-        low: device.percentage <= lowThreshold,
+        low: !charging && device.percentage <= lowThreshold,
+        charging,
         detail: device.state in STATE_LABELS ? _(STATE_LABELS[device.state]) : '',
     };
 }
@@ -124,25 +136,22 @@ class StatRow extends PopupMenu.PopupBaseMenuItem {
     }
 
     /** A null fraction hides the bar (nothing measurable to show). */
-    update({fraction, value, detail = '', warning = false}) {
+    update({fraction, value, detail = '', warning = false, charging = false}) {
         this._bar.visible = fraction !== null;
         this._fill.scale_x = Math.min(Math.max(fraction ?? 0, 0), 1);
         this._value.text = value;
         this._detail.text = detail;
         this._detail.visible = detail !== '';
-        for (const actor of [this._fill, this._value]) {
-            if (warning)
-                actor.add_style_class_name('tray-stats-warning');
-            else
-                actor.remove_style_class_name('tray-stats-warning');
-        }
+        setStyleClass(this._fill, 'tray-stats-warning', warning);
+        setStyleClass(this._value, 'tray-stats-warning', warning);
+        setStyleClass(this._fill, 'tray-stats-charging', charging);
     }
 });
 
-/** Icon + label shown in the top bar. */
+/** Icon + label shown in the top bar, followed by a bolt while charging. */
 const PanelStat = GObject.registerClass(
 class PanelStat extends St.BoxLayout {
-    _init(gicon) {
+    _init(gicon, chargingGicon = null) {
         super._init({style_class: 'tray-stats-item'});
         this.add_child(new St.Icon({gicon, style_class: 'system-status-icon tray-stats-icon'}));
         this._label = new St.Label({
@@ -150,14 +159,23 @@ class PanelStat extends St.BoxLayout {
             y_align: Clutter.ActorAlign.CENTER,
         });
         this.add_child(this._label);
+
+        this._chargingIcon = null;
+        if (chargingGicon) {
+            this._chargingIcon = new St.Icon({
+                gicon: chargingGicon,
+                style_class: 'system-status-icon tray-stats-icon tray-stats-charging',
+                visible: false,
+            });
+            this.add_child(this._chargingIcon);
+        }
     }
 
-    update(text, warning = false) {
+    update(text, warning = false, charging = false) {
         this._label.text = text;
-        if (warning)
-            this._label.add_style_class_name('tray-stats-warning');
-        else
-            this._label.remove_style_class_name('tray-stats-warning');
+        setStyleClass(this._label, 'tray-stats-warning', warning);
+        if (this._chargingIcon)
+            this._chargingIcon.visible = charging;
     }
 });
 
@@ -178,6 +196,7 @@ class TrayStatsIndicator extends PanelMenu.Button {
 
         const cpuIcon = Gio.icon_new_for_string(`${extension.path}/icons/tray-stats-cpu-symbolic.svg`);
         const memIcon = Gio.icon_new_for_string(`${extension.path}/icons/tray-stats-memory-symbolic.svg`);
+        this._chargingIcon = Gio.icon_new_for_string(`${extension.path}/icons/tray-stats-charging-symbolic.svg`);
 
         // Top bar
         const box = new St.BoxLayout({style_class: 'tray-stats-box'});
@@ -328,8 +347,8 @@ class TrayStatsIndicator extends PanelMenu.Button {
                 name: KIND_ICONS[device.kind] ?? 'bluetooth-active-symbolic',
             });
 
-            const stat = new PanelStat(gicon);
-            stat.update(battery.text, battery.low);
+            const stat = new PanelStat(gicon, this._chargingIcon);
+            stat.update(battery.text, battery.low, battery.charging);
             this._devicesBox.add_child(stat);
 
             const row = new StatRow(gicon, device.name || _('Unknown device'));
@@ -338,6 +357,7 @@ class TrayStatsIndicator extends PanelMenu.Button {
                 value: battery.text,
                 detail: battery.detail,
                 warning: battery.low,
+                charging: battery.charging,
             });
             this._devicesSection.addMenuItem(row);
         }

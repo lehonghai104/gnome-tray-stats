@@ -18,6 +18,15 @@
   color: #f66151;
 }
 
+.tray-stats-charging {
+  color: #57e389;
+}
+
+/* Keep the bolt next to the value it belongs to */
+.tray-stats-icon.tray-stats-charging {
+  margin-left: 0;
+}
+
 .tray-stats-row {
   spacing: 12px;
 }
@@ -40,6 +49,10 @@
 
 .tray-stats-bar-fill.tray-stats-warning {
   background-color: #e01b24;
+}
+
+.tray-stats-bar-fill.tray-stats-charging {
+  background-color: #2ec27e;
 }
 
 .tray-stats-row-value {
